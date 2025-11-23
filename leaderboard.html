@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Tetris Leaderboard</title>
+<style>
+  body{background:#000;color:#fff;font-family:Arial;text-align:center;padding:30px;}
+  .board{display:inline-block;background:#111;border:4px solid #333;padding:20px;width:420px;}
+  h1{color:#ffd700;font-family:monospace;margin:0 0 12px 0}
+  table{width:100%;border-collapse:collapse}
+  td{padding:8px;border-bottom:1px solid #222;font-family:monospace;}
+  .rank{color:#00ff00;width:40px}
+  .score{color:#ffcc00;text-align:right;width:80px}
+  .name{color:#fff;text-align:left}
+</style>
+</head>
+<body>
+  <h1> 테트리스로 반포자이 입성 </h1>
+  <div class="board">
+    <table id="tbl">
+      <tr><th class="rank">Rank</th><th class="name">Name</th><th class="score">Score</th></tr>
+    </table>
+  </div>
+
+<script>
+const RAW_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQx037iouAPGiGKRWntQq9xdlQrJ6iX9icpjtk0-P8UYtziVF7ATcthoa-MRlylI-L2ze0iNvSt7q_1/pub?gid=0&single=true&output=csv";
+
+// CORS 우회 프록시
+const CSV_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(RAW_URL)}`;
+
+async function loadScores(){
+  try{
+    const res = await fetch(CSV_URL);
+    const text = await res.text();
+
+    let lines = text.split(/\r?\n/).filter(v => v.trim()).slice(1);
+    let rows = lines.map(line=>{
+      const parts = line.split(",");
+      return { name: parts[0].replace(/"/g,""), score: Number(parts[1]) || 0 };
+    });
+
+    rows.sort((a,b)=>b.score - a.score);
+
+    const table = document.getElementById("tbl");
+
+    // 기존 내용 삭제 후 갱신
+    table.innerHTML = `<tr><th>Rank</th><th>Name</th><th>Score</th></tr>`;
+
+    rows.slice(0,10).forEach((r,i)=>{
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${i+1}</td>
+        <td>${r.name}</td>
+        <td>${r.score}</td>
+      `;
+      table.appendChild(row);
+    });
+
+  }catch(err){
+    console.error(err);
+    document.body.innerHTML = `<h3 style="color:red">⚠ 데이터 불러오기 오류: ${err.message}</h3>`;
+  }
+}
+
+// 처음 실행
+loadScores();
+
+// **5초마다 자동 새로고침**
+setInterval(loadScores, 5000);
+</script>
+
+
+
+
+</body>
+</html>
